@@ -42,7 +42,7 @@ body {
   font-family: var(--font);
   background:
     radial-gradient(ellipse 80% 50% at 50% -20%, rgba(110, 245, 176, 0.08), transparent),
-    radial-gradient(ellipse 60% 40% at 100% 50%, rgba(177, 140, 255, 0.05), transparent),
+    radial-gradient(ellipse 60% 40% at 100% 50%, rgba(255, 255, 255, 0.05), transparent),
     linear-gradient(180deg, #060705 0%, #0a0c08 40%, #050605 100%);
 }
 
@@ -226,7 +226,7 @@ h3 {
 }
 
 .toast-working .toast-icon {
-  background: rgba(177, 140, 255, 0.15);
+  background: rgba(255, 255, 255, 0.15);
   color: var(--violet);
   animation: pulse 1.2s ease infinite;
 }
@@ -237,12 +237,12 @@ h3 {
 }
 
 .toast-error .toast-icon {
-  background: rgba(255, 123, 114, 0.15);
+  background: rgba(255, 255, 255, 0.15);
   color: var(--red);
 }
 
 .toast-info .toast-icon {
-  background: rgba(255, 211, 106, 0.12);
+  background: rgba(110, 245, 176, 0.12);
   color: var(--amber);
 }
 
@@ -897,7 +897,7 @@ h3 {
   padding: 2px 8px;
   border-radius: 4px;
   font-size: 0.7rem;
-  background: rgba(255, 211, 106, 0.15);
+  background: rgba(110, 245, 176, 0.15);
   color: var(--amber);
 }
 
@@ -969,7 +969,7 @@ h3 {
 }
 
 .attack-col.bad {
-  border-color: rgba(255, 123, 114, 0.3);
+  border-color: rgba(255, 255, 255, 0.3);
 }
 
 .attack-col.good {
@@ -1019,7 +1019,7 @@ h3 {
 }
 
 .drand-banner.waiting {
-  border-color: rgba(177, 140, 255, 0.35);
+  border-color: rgba(255, 255, 255, 0.35);
 }
 
 .stat-row {
@@ -1102,7 +1102,7 @@ h3 {
   margin: 16px 0;
   border-radius: var(--radius-sm);
   border-left: 3px solid var(--amber);
-  background: rgba(255, 211, 106, 0.06);
+  background: rgba(110, 245, 176, 0.06);
   font-size: 0.9rem;
   color: var(--muted);
 }
@@ -1146,7 +1146,7 @@ h3 {
 }
 
 .drand-chip.warn {
-  border-color: rgba(255, 123, 114, 0.4);
+  border-color: rgba(255, 255, 255, 0.4);
 }
 
 .drand-chip.warn small {
@@ -1384,15 +1384,15 @@ h3 {
 }
 
 .phase-command.urgent {
-  border-color: rgba(255, 211, 106, 0.45);
+  border-color: rgba(110, 245, 176, 0.45);
 }
 
 .phase-command.danger {
-  border-color: rgba(255, 123, 114, 0.45);
+  border-color: rgba(255, 255, 255, 0.45);
 }
 
 .phase-command.wait {
-  border-color: rgba(177, 140, 255, 0.35);
+  border-color: rgba(255, 255, 255, 0.35);
 }
 
 .phase-command.complete {
@@ -1485,8 +1485,8 @@ h3 {
 .reveal-progress {
   padding: 12px 14px;
   border-radius: var(--radius-sm);
-  border: 1px solid rgba(177, 140, 255, 0.35);
-  background: rgba(177, 140, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  background: rgba(255, 255, 255, 0.06);
 }
 
 .reveal-progress span {
@@ -1545,8 +1545,8 @@ h3 {
 }
 
 .comparison-side.leaky {
-  background: rgba(255, 123, 114, 0.04);
-  border-color: rgba(255, 123, 114, 0.25);
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.25);
 }
 
 .comparison-side.sealed {
@@ -1649,7 +1649,7 @@ h3 {
 }
 
 .activity-log.working {
-  border-color: rgba(177, 140, 255, 0.35);
+  border-color: rgba(255, 255, 255, 0.35);
 }
 
 .activity-log.ok {
@@ -1657,7 +1657,7 @@ h3 {
 }
 
 .activity-log.error {
-  border-color: rgba(255, 123, 114, 0.35);
+  border-color: rgba(255, 255, 255, 0.35);
 }
 
 .activity-log li.muted {

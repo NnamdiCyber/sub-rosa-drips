@@ -142,7 +142,7 @@
   position: relative;
   display: inline-block;
   font-style: normal;
-  background: linear-gradient(120deg, var(--green) 0%, var(--cyan) 60%, var(--violet) 100%);
+  background: linear-gradient(120deg, var(--green) 0%, var(--green-2) 60%, var(--ink) 100%);
   background-clip: text;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -227,7 +227,7 @@
   overflow: hidden;
   background:
     radial-gradient(ellipse 80% 50% at 50% 0%, rgba(110, 245, 176, 0.16), transparent 65%),
-    radial-gradient(ellipse 60% 40% at 100% 100%, rgba(177, 140, 255, 0.14), transparent 65%),
+    radial-gradient(ellipse 60% 40% at 100% 100%, rgba(255, 255, 255, 0.14), transparent 65%),
     linear-gradient(180deg, #0a0e16 0%, #060810 100%);
   box-shadow: var(--shadow-lg);
 }
@@ -280,11 +280,11 @@
   gap: 6px;
   padding: 6px 12px;
   border-radius: 999px;
-  border: 1px solid rgba(255, 211, 106, 0.4);
+  border: 1px solid rgba(110, 245, 176, 0.4);
   color: var(--amber);
   font-family: var(--mono);
   font-size: 0.74rem;
-  background: rgba(255, 211, 106, 0.08);
+  background: rgba(110, 245, 176, 0.08);
 }
 
 .console-status-row .status-tag::before {
@@ -297,8 +297,8 @@
 }
 
 @keyframes pulse-dot-amber {
-  0%, 100% { box-shadow: 0 0 0 4px rgba(255, 211, 106, 0.2); }
-  50% { box-shadow: 0 0 0 9px rgba(255, 211, 106, 0); }
+  0%, 100% { box-shadow: 0 0 0 4px rgba(110, 245, 176, 0.2); }
+  50% { box-shadow: 0 0 0 9px rgba(110, 245, 176, 0); }
 }
 
 /* The seal animation: commit → ciphertext → drand R → unlock */
@@ -345,7 +345,7 @@
   background: radial-gradient(
     circle at 35% 30%,
     rgba(110, 245, 176, 0.55),
-    rgba(177, 140, 255, 0.38) 55%,
+    rgba(255, 255, 255, 0.38) 55%,
     transparent 78%
   );
   filter: blur(4px);
@@ -377,7 +377,7 @@
     0 0 0 1px rgba(110, 245, 176, 0.45),
     0 0 0 6px rgba(11, 16, 24, 0.85),
     0 16px 40px rgba(110, 245, 176, 0.4),
-    0 0 80px rgba(177, 140, 255, 0.35);
+    0 0 80px rgba(255, 255, 255, 0.35);
   animation: logo-pulse 4.5s var(--ease-in-out) infinite;
 }
 
@@ -401,14 +401,14 @@
       0 0 0 1px rgba(110, 245, 176, 0.5),
       0 0 0 6px rgba(11, 16, 24, 0.85),
       0 16px 40px rgba(110, 245, 176, 0.4),
-      0 0 80px rgba(177, 140, 255, 0.3);
+      0 0 80px rgba(255, 255, 255, 0.3);
   }
   50% {
     box-shadow:
-      0 0 0 1px rgba(177, 140, 255, 0.55),
+      0 0 0 1px rgba(255, 255, 255, 0.55),
       0 0 0 6px rgba(11, 16, 24, 0.85),
-      0 18px 50px rgba(177, 140, 255, 0.45),
-      0 0 90px rgba(91, 224, 255, 0.3);
+      0 18px 50px rgba(255, 255, 255, 0.45),
+      0 0 90px rgba(110, 245, 176, 0.3);
   }
 }
 
@@ -485,28 +485,28 @@
 .seal-chip.cipher {
   top: 50%;
   right: 18px;
-  border-color: rgba(177, 140, 255, 0.5);
-  color: var(--violet);
+  border-color: rgba(255, 255, 255, 0.22);
+  color: var(--ink-2);
   animation: chip-in 700ms var(--ease) 0.5s both, hover-2 5s var(--ease-in-out) 1.4s infinite;
 }
 
 .seal-chip.cipher i {
-  background: var(--violet);
-  box-shadow: 0 0 12px var(--violet);
+  background: var(--ink);
+  box-shadow: 0 0 8px rgba(255, 255, 255, 0.4);
 }
 
 .seal-chip.drand {
   bottom: 18px;
   left: 50%;
   transform: translateX(-50%);
-  border-color: rgba(255, 211, 106, 0.5);
-  color: var(--amber);
+  border-color: rgba(110, 245, 176, 0.42);
+  color: var(--green);
   animation: chip-in 700ms var(--ease) 0.8s both, hover-3 5s var(--ease-in-out) 1.8s infinite;
 }
 
 .seal-chip.drand i {
-  background: var(--amber);
-  box-shadow: 0 0 12px var(--amber);
+  background: var(--green);
+  box-shadow: 0 0 12px var(--green);
 }
 
 @keyframes chip-in {

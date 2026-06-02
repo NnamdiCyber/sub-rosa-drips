@@ -171,7 +171,7 @@
   font-family: var(--mono);
   font-size: 0.7rem;
   color: var(--amber);
-  background: rgba(255, 211, 106, 0.12);
+  background: rgba(110, 245, 176, 0.12);
 }
 
 .big {
@@ -218,7 +218,7 @@
 }
 
 .drand-banner.waiting {
-  border-color: rgba(177, 140, 255, 0.36);
+  border-color: rgba(255, 255, 255, 0.36);
 }
 
 .drand-banner.waiting em {
@@ -257,8 +257,8 @@
 }
 
 .lifecycle-step.active {
-  border-color: rgba(255, 211, 106, 0.4);
-  background: rgba(255, 211, 106, 0.05);
+  border-color: rgba(110, 245, 176, 0.4);
+  background: rgba(110, 245, 176, 0.05);
 }
 
 .lifecycle-index {
@@ -362,9 +362,9 @@
 }
 
 .attack-col.bad {
-  border-color: rgba(255, 119, 111, 0.32);
+  border-color: rgba(255, 255, 255, 0.32);
   background:
-    radial-gradient(ellipse 80% 60% at 100% 0%, rgba(255, 119, 111, 0.06), transparent 60%),
+    radial-gradient(ellipse 80% 60% at 100% 0%, rgba(255, 255, 255, 0.06), transparent 60%),
     var(--surface-0);
 }
 
@@ -487,7 +487,7 @@
 }
 
 .cap-table tr.fail td {
-  background: rgba(255, 119, 111, 0.04);
+  background: rgba(255, 255, 255, 0.04);
 }
 
 /* Keeper list */
@@ -569,10 +569,10 @@
 
 .callout {
   padding: 14px 16px;
-  border: 1px solid rgba(255, 211, 106, 0.32);
+  border: 1px solid rgba(110, 245, 176, 0.32);
   border-left: 3px solid var(--amber);
   border-radius: 10px;
-  background: rgba(255, 211, 106, 0.05);
+  background: rgba(110, 245, 176, 0.05);
   color: var(--ink-2);
   font-size: 0.9rem;
 }
@@ -617,12 +617,12 @@
 
 .passkey-status.error {
   color: var(--red);
-  border-color: rgba(255, 119, 111, 0.34);
+  border-color: rgba(255, 255, 255, 0.34);
 }
 
 .passkey-status.loading {
   color: var(--violet);
-  border-color: rgba(177, 140, 255, 0.34);
+  border-color: rgba(255, 255, 255, 0.34);
 }
 
 .link-list {
