@@ -1,0 +1,86 @@
+// Receipt verification tests with golden and tampered fixtures.
+
+import { test } from "node:test";
+import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
+import { resolve, dirname } from "node:path";
+import { fileURLToPath } from "node:url";
+import { verifyReceipt, parseReceipt } from "@sub-rosa/sdk";
+
+const DIR = dirname(fileURLToPath(import.meta.url));
+
+function loadFixture(name: string) {
+  const path = resolve(DIR, "fixtures", name);
+  return parseReceipt(readFileSync(path, "utf-8"));
+}
+
+test("golden fixture passes verification", () => {
+  const receipt = loadFixture("golden.json");
+  const result = verifyReceipt(receipt);
+  assert.equal(result.valid, true);
+  assert.equal(result.computedWinner.address, receipt.winner);
+  assert.equal(result.computedWinner.value?.toString(), receipt.winningValue);
+});
+
+test("tampered winner: wrong winner address fails", () => {
+  const receipt = loadFixture("tampered-winner.json");
+  const result = verifyReceipt(receipt);
+  assert.equal(result.valid, false);
+  const winnerIssues = result.issues.filter((i) => i.code === "winner_mismatch");
+  assert.equal(winnerIssues.length, 1);
+  assert.match(winnerIssues[0].message, /computed winner is/);
+});
+
+test("tampered values: swapped values cause commitment mismatch", () => {
+  const receipt = loadFixture("tampered-values.json");
+  const result = verifyReceipt(receipt);
+  assert.equal(result.valid, false);
+  // GA4 committed commitment(100, aa) but receipt says revealedValue=250.
+  // GB5 committed commitment(250, bb) but receipt says revealedValue=100.
+  // Both fail the binding check.
+  const cmtIssues = result.issues.filter((i) => i.code === "commitment_mismatch");
+  assert.equal(cmtIssues.length, 2);
+});
+
+test("tampered commitment: tampered commitment hash fails binding check", () => {
+  const receipt = loadFixture("tampered-commitment.json");
+  const result = verifyReceipt(receipt);
+  assert.equal(result.valid, false);
+  const cmtIssues = result.issues.filter((i) => i.code === "commitment_mismatch");
+  assert.equal(cmtIssues.length, 1);
+  assert.ok(cmtIssues[0].path?.includes("GA4GN"));
+});
+
+test("tampered network: different network passphrase still passes (no onchain check)", () => {
+  // The verifier is offline and doesn't check network against RPC.
+  // Network is metadata only — the verifier trusts the receipt content.
+  // This demonstrates the honest-marking requirement: the verifier checks
+  // internal consistency, not external source-of-truth.
+  const receipt = loadFixture("tampered-network.json");
+  const result = verifyReceipt(receipt);
+  assert.equal(result.valid, true);
+});
+
+test("invalid clearing rule fails", () => {
+  const receipt = loadFixture("golden.json");
+  (receipt as any).clearingRule = "InvalidRule";
+  const result = verifyReceipt(receipt);
+  assert.equal(result.valid, false);
+  assert.ok(result.issues.some((i) => i.code === "invalid_clearing_rule"));
+});
+
+test("duplicate bidder fails", () => {
+  const receipt = loadFixture("golden.json");
+  receipt.bidders.push(receipt.bidders[0]);
+  const result = verifyReceipt(receipt);
+  assert.equal(result.valid, false);
+  assert.ok(result.issues.some((i) => i.code === "duplicate_bidder"));
+});
+
+test("unsupported version fails", () => {
+  const receipt = loadFixture("golden.json");
+  (receipt as any).version = 99;
+  const result = verifyReceipt(receipt);
+  assert.equal(result.valid, false);
+  assert.ok(result.issues.some((i) => i.code === "unsupported_version"));
+});

@@ -24,6 +24,20 @@ export {
 export type { TimeoutErrorParams } from "./errors.js";
 export { MAINNET_ARTIFACTS, MAINNET_MICRO_MAX_ESCROW } from "./mainnet-artifacts.js";
 
+export {
+  serializeReceipt,
+  parseReceipt,
+  type RoundReceipt,
+  type BidReceiptEntry,
+  RECEIPT_VERSION,
+} from "./receipt.js";
+export {
+  verifyReceipt,
+  type VerificationIssue,
+  type VerificationResult,
+  type Severity,
+} from "./verify.js";
+
 // Re-export the generated contract types so consumers get spec-accurate shapes
 // from a single import surface.
 export {

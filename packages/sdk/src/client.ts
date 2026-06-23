@@ -20,7 +20,9 @@ import {
   type Round,
   type Seal,
 } from "@sub-rosa/round-bindings";
+import { toHex } from "@sub-rosa/tlock";
 import type { SealedBid } from "@sub-rosa/tlock";
+import type { RoundReceipt } from "./receipt.js";
 import type { TransactionSubmitter } from "./submitter.js";
 import {
   SubRosaClientConfigError,
@@ -379,5 +381,61 @@ export class SubRosaClient {
   async getConfig(): Promise<GlobalConfig> {
     const tx = await this.contract.get_config();
     return tx.result.unwrap();
+  }
+
+  /** Export a versioned canonical receipt for a round. Collects all on-chain
+   *  state — round params, bidders, commitments, reveal validity, seal evidence
+   *  (may be null if expired) — into a single portable document. */
+  async exportReceipt(roundId: number | bigint): Promise<RoundReceipt> {
+    const rid = toBigInt(roundId);
+    const [round, config] = await Promise.all([
+      this.getRound(rid),
+      this.getConfig(),
+    ]);
+
+    const bidders: string[] = [];
+    for await (const addr of this.bidders(rid)) bidders.push(addr);
+
+    const bids: RoundReceipt["bids"] = {};
+    for (const bidder of bidders) {
+      const [state, seal] = await Promise.all([
+        this.getBidState(rid, bidder),
+        this.getSeal(rid, bidder),
+      ]);
+      const commitment = toHex(state.commitment);
+      bids[bidder] = {
+        commitment,
+        escrow: state.escrow.toString(),
+        revealedValue: state.revealed_value?.toString() ?? null,
+        nonce: null,
+        hashValid: null,
+        valid: state.valid,
+        settled: state.settled,
+        evidence: {
+          ciphertext: seal ? toHex(seal.ciphertext) : null,
+          auditorBlob: seal ? toHex(seal.auditor_blob) : null,
+        },
+      };
+    }
+
+    return {
+      version: 1,
+      network: this.networkPassphrase,
+      contractId: this.contractId,
+      exportedAt: new Date().toISOString(),
+      roundId: rid.toString(),
+      itemRef: toHex(round.item_ref),
+      revealRound: Number(round.reveal_round),
+      clearingRule: round.clearing_rule.tag,
+      commitDeadline: round.commit_deadline.toString(),
+      revealDeadline: round.reveal_deadline.toString(),
+      operator: round.operator,
+      auditorPubkey: toHex(round.auditor_pubkey),
+      bidders,
+      bids,
+      winner: round.winner ?? null,
+      winningValue: round.winning_bid?.toString() ?? null,
+      status: round.status.tag,
+    };
   }
 }
