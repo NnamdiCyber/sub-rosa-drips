@@ -30,6 +30,8 @@ const MAX_BIDDERS: u32 = 500;
 /// Grace window (seconds) after the reveal deadline before a stuck round
 /// (e.g. Drand never produced R) can be voided and all escrow refunded.
 const VOID_GRACE: u64 = 3600;
+/// Maximum page size for paginated getters. Prevents resource exhaustion.
+const MAX_PAGE_SIZE: u32 = 100;
 
 #[contract]
 pub struct SubRosaRound;
@@ -425,6 +427,36 @@ impl SubRosaRound {
     /// indexer is required and nothing can be missed.
     pub fn get_bidders(env: Env, round_id: u64) -> Result<Vec<Address>, Error> {
         Ok(storage::get_round(&env, round_id)?.bidders)
+    }
+
+    /// Paginated bidder index for a round. Returns a page of bidders starting
+    /// at `cursor` (zero-based), with continuation metadata.
+    ///
+    /// `limit` must be 1–100. `next_cursor` in the response is 0 when there
+    /// are no more pages.
+    pub fn get_bidders_page(
+        env: Env,
+        round_id: u64,
+        cursor: u32,
+        limit: u32,
+    ) -> Result<BiddersPage, Error> {
+        if limit == 0 || limit > MAX_PAGE_SIZE {
+            return Err(Error::InvalidLimit);
+        }
+        let bidders = storage::get_round(&env, round_id)?.bidders;
+        let total = bidders.len();
+        let start = cursor.min(total);
+        let end = (start + limit).min(total);
+        let mut data: Vec<Address> = Vec::new(&env);
+        for i in start..end {
+            data.push_back(bidders.get(i).unwrap());
+        }
+        let next_cursor = if end < total { end } else { 0 };
+        Ok(BiddersPage {
+            data,
+            next_cursor,
+            total,
+        })
     }
 
     /// Observer view: the sealed ciphertext + auditor blob, while still in
