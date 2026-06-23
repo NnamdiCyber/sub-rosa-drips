@@ -79,7 +79,8 @@ export const Errors = {
   35: {message:"BidExceedsEscrow"},
   36: {message:"DeadlineInPast"},
   37: {message:"NoValidBids"},
-  38: {message:"RoundFull"}
+  38: {message:"RoundFull"},
+  39: {message:"InvalidLimit"}
 }
 
 
@@ -165,6 +166,18 @@ export interface GlobalConfig {
   dst: Buffer;
   g2_neg_generator: Buffer;
   usdc: string;
+}
+
+/**
+ * A page of bidders for a round, with continuation metadata.
+ */
+export interface BiddersPage {
+  /** Page of bidder addresses. */
+  data: Array<string>;
+  /** Cursor for the next page (0 if no more pages). */
+  next_cursor: u32;
+  /** Total number of bidders in the round. */
+  total: u32;
 }
 
 export interface Client {
@@ -374,6 +387,27 @@ export interface Client {
   }) => Promise<AssembledTransaction<Result<Array<string>>>>
 
   /**
+   * Construct and simulate a get_bidders_page transaction. Returns an `AssembledTransaction` object which will have a `result` field containing the result of the simulation. If this transaction changes contract state, you will need to call `signAndSend()` on the returned object.
+   * Paginated bidder index for a round. Returns a page of bidders starting at cursor, with continuation metadata.
+   */
+  get_bidders_page: ({round_id, cursor, limit}: {round_id: u64, cursor: u32, limit: u32}, options?: {
+    /**
+     * The fee to pay for the transaction. Default: BASE_FEE
+     */
+    fee?: number;
+
+    /**
+     * The maximum amount of time to wait for the transaction to complete. Default: DEFAULT_TIMEOUT
+     */
+    timeoutInSeconds?: number;
+
+    /**
+     * Whether to automatically simulate the transaction when constructing the AssembledTransaction. Default: true
+     */
+    simulate?: boolean;
+  }) => Promise<AssembledTransaction<Result<BiddersPage>>>
+
+  /**
    * Construct and simulate a open_reveal transaction. Returns an `AssembledTransaction` object which will have a `result` field containing the result of the simulation. If this transaction changes contract state, you will need to call `signAndSend()` on the returned object.
    * Open the reveal window by proving Drand round R has been produced.
    * 
@@ -468,6 +502,7 @@ export class Client extends ContractClient {
         "AAAAAAAAAAAAAAAJZ2V0X3JvdW5kAAAAAAAAAQAAAAAAAAAIcm91bmRfaWQAAAAGAAAAAQAAA+kAAAfQAAAABVJvdW5kAAAAAAAAAw==",
         "AAAAAAAAAAAAAAAKZ2V0X2NvbmZpZwAAAAAAAAAAAAEAAAPpAAAH0AAAAAxHbG9iYWxDb25maWcAAAAD",
         "AAAAAAAAAP1LZWVwZXIgdmlldzogdGhlIGRldGVybWluaXN0aWMsIG9yZGVyZWQgYmlkZGVyIGluZGV4IGZvciBhIHJvdW5kLiBUaGUKa2VlcGVyIHJlYWRzIHRoaXMgdG8gbGVhcm4gZXhhY3RseSB3aGljaCBzZWFscyBtdXN0IGJlIG9wZW5lZCBhbmQKcmV2ZWFsZWQg4oCUIHRoZSByZXZlYWwgc2V0IGlzIG9uLWNoYWluIHN0YXRlLCBzbyBubyBldmVudCBzY3JhcGluZyBvcgppbmRleGVyIGlzIHJlcXVpcmVkIGFuZCBub3RoaW5nIGNhbiBiZSBtaXNzZWQuAAAAAAAAC2dldF9iaWRkZXJzAAAAAAEAAAAAAAAACHJvdW5kX2lkAAAABgAAAAEAAAPpAAAD6gAAABMAAAAD",
+        "AAAAAAAAAG1QYWdpbmF0ZWQgYmlkZGVyIGluZGV4IGZvciBhIHJvdW5kLiBSZXR1cm5zIGEgcGFnZSBvZiBiaWRkZXJzIHN0YXJ0aW5nIGF0IGN1cnNvciwgd2l0aCBjb250aW51YXRpb24gbWV0YWRhdGEuAAAAAAAAEGdldF9iaWRkZXJzX3BhZ2UAAAADAAAACVJvdW5kIElELgAAAAAAAAhyb3VuZF9pZAAAAAYAAAAgWmVyby1iYXNlZCBjdXJzb3IgKHN0YXJ0IGluZGV4KS4AAAAGY3Vyc29yAAAAAAAEAAAALE1heGltdW0gbnVtYmVyIG9mIGJpZGRlcnMgdG8gcmV0dXJuICgxLTEwMCkuAAAABWxpbWl0AAAAAAAABAAAAAEAAAPpAAAH0AAAAAtCaWRkZXJzUGFnZQAAAAAD",
         "AAAAAAAAANRPcGVuIHRoZSByZXZlYWwgd2luZG93IGJ5IHByb3ZpbmcgRHJhbmQgcm91bmQgUiBoYXMgYmVlbiBwcm9kdWNlZC4KClRoZSBzdXBwbGllZCBzaWduYXR1cmUgaXMgdmVyaWZpZWQgb24tY2hhaW4gdmlhIEJMUzEyLTM4MS4gVGhpcyBpcyB0aGUKb25seSB3YXkgdG8gbW92ZSBhIHJvdW5kIGludG8gYFJldmVhbGluZ2A7IHRoZXJlIGlzIG5vIG9wZXJhdG9yIG92ZXJyaWRlLgAAAAtvcGVuX3JldmVhbAAAAAACAAAAAAAAAAhyb3VuZF9pZAAAAAYAAAAAAAAAD2RyYW5kX3NpZ25hdHVyZQAAAAPuAAAAYAAAAAEAAAPpAAAD7QAAAAAAAAAD",
         "AAAAAAAAAIZPcGVuIGEgbmV3IHNlYWxlZCByb3VuZC4gUGVybWlzc2lvbmxlc3M6IGFueW9uZSBjYW4gYmUgYW4gb3BlcmF0b3IsIGFuZAp0aGUgb3BlcmF0b3IgZ2V0cyBubyBzcGVjaWFsIHJlYWQgcG93ZXIg4oCUIHRoYXQgaXMgdGhlIHBvaW50LgAAAAAADGNyZWF0ZV9yb3VuZAAAAAcAAAAAAAAACG9wZXJhdG9yAAAAEwAAAAAAAAAIaXRlbV9yZWYAAAPuAAAAIAAAAAAAAAAMcmV2ZWFsX3JvdW5kAAAABgAAAAAAAAANY2xlYXJpbmdfcnVsZQAAAAAAB9AAAAAMQ2xlYXJpbmdSdWxlAAAAAAAAAA9jb21taXRfZGVhZGxpbmUAAAAABgAAAAAAAAAPcmV2ZWFsX2RlYWRsaW5lAAAAAAYAAAAAAAAADmF1ZGl0b3JfcHVia2V5AAAAAAAOAAAAAQAAA+kAAAAGAAAAAw==",
         "AAAAAAAAAAAAAAANZ2V0X2JpZF9zdGF0ZQAAAAAAAAIAAAAAAAAACHJvdW5kX2lkAAAABgAAAAAAAAAGYmlkZGVyAAAAAAATAAAAAQAAA+kAAAfQAAAACEJpZFN0YXRlAAAAAw==",
@@ -479,7 +514,8 @@ export class Client extends ContractClient {
         "AAAAAgAAAAAAAAAAAAAAB0RhdGFLZXkAAAAABQAAAAAAAAAAAAAABkNvbmZpZwAAAAAAAAAAAAAAAAAMUm91bmRDb3VudGVyAAAAAQAAAAAAAAAFUm91bmQAAAAAAAABAAAABgAAAAEAAAAAAAAABVN0YXRlAAAAAAAAAgAAAAYAAAATAAAAAQAAAAAAAAAEU2VhbAAAAAIAAAAGAAAAEw==",
         "AAAAAQAAAJBQZXItYmlkIGR1cmFibGUgc3RhdGUgKFBlcnNpc3RlbnQpLiBIb2xkcyBldmVyeXRoaW5nIHJlcXVpcmVkIHRvIGNsZWFyIGFuZApzZXR0bGUgLyByZWZ1bmQgc2FmZWx5LCBldmVuIGlmIHRoZSBlcGhlbWVyYWwgY2lwaGVydGV4dCBoYXMgZXhwaXJlZC4AAAAAAAAACEJpZFN0YXRlAAAABQAAADtIID0gc2hhMjU2KGJlMTYodmFsdWUpIOKAliBub25jZSkg4oCUIGJpbmRzIHRoZSBzZWFsZWQgYmlkLgAAAAAKY29tbWl0bWVudAAAAAAD7gAAACAAAABDUHVibGljIFVTREMgYnVkZ2V0IGxvY2tlZCBhdCBjb21taXQ7IHVwcGVyIGJvdW5kIG9uIHRoZSBzZWFsZWQgYmlkLgAAAAAGZXNjcm93AAAAAAALAAAAAAAAAA5yZXZlYWxlZF92YWx1ZQAAAAAD6AAAAAsAAAAAAAAAB3NldHRsZWQAAAAAAQAAAAAAAAAFdmFsaWQAAAAAAAAB",
         "AAAAAgAAAGtEZXRlcm1pbmlzdGljIGNsZWFyaW5nIHJ1bGUuIERlZmF1bHQgaXMgYSBmaXJzdC1wcmljZSBzZWFsZWQtYmlkIGF1Y3Rpb24KKGhpZ2hlc3QgdmFsaWQgcmV2ZWFsZWQgYmlkIHdpbnMpLgAAAAAAAAAADENsZWFyaW5nUnVsZQAAAAIAAAAAAAAAAAAAAApIaWdoZXN0QmlkAAAAAAAAAAAAAAAAAAlMb3dlc3RCaWQAAAA=",
-        "AAAAAQAAAaRDb250cmFjdC1nbG9iYWwgY29uZmlndXJhdGlvbiwgc2V0IG9uY2UgYXQgZGVwbG95IGluIEluc3RhbmNlIHN0b3JhZ2UuCgpBbGwgRHJhbmQgcGFyYW1ldGVycyBhcmUgc3VwcGxpZWQgYXQgZGVwbG95IHRpbWUgKHZhbGlkYXRlZCBhZ2FpbnN0IGEgbGl2ZQpxdWlja25ldCByb3VuZCBiZWZvcmUgZGVwbG95KSBzbyB0aGUgc291cmNlIGNhcnJpZXMgbm8gZ3Vlc3NlZCBjb25zdGFudHMuCmBkcmFuZF9wdWJrZXlgIGFuZCBgZzJfbmVnX2dlbmVyYXRvcmAgYXJlIHVuY29tcHJlc3NlZCBCTFMxMi0zODEgRzIgcG9pbnRzCigxOTIgYnl0ZXMgZWFjaCkgaW4gU29yb2JhbiBob3N0IHNlcmlhbGl6YXRpb24uIGBkc3RgIGlzIHRoZSBSRkMgOTM4MApkb21haW4gc2VwYXJhdGlvbiB0YWcgZm9yIHRoZSBjb25maWd1cmVkIERyYW5kIHNjaGVtZS4AAAAAAAAADEdsb2JhbENvbmZpZwAAAAYAAAAAAAAADWRyYW5kX2dlbmVzaXMAAAAAAAAGAAAAAAAAAAxkcmFuZF9wZXJpb2QAAAAGAAAAAAAAAAxkcmFuZF9wdWJrZXkAAAPuAAAAwAAAAAAAAAADZHN0AAAAAA4AAAAAAAAAEGcyX25lZ19nZW5lcmF0b3IAAAPuAAAAwAAAAAAAAAAEdXNkYwAAABM=" ]),
+        "AAAAAQAAAaRDb250cmFjdC1nbG9iYWwgY29uZmlndXJhdGlvbiwgc2V0IG9uY2UgYXQgZGVwbG95IGluIEluc3RhbmNlIHN0b3JhZ2UuCgpBbGwgRHJhbmQgcGFyYW1ldGVycyBhcmUgc3VwcGxpZWQgYXQgZGVwbG95IHRpbWUgKHZhbGlkYXRlZCBhZ2FpbnN0IGEgbGl2ZQpxdWlja25ldCByb3VuZCBiZWZvcmUgZGVwbG95KSBzbyB0aGUgc291cmNlIGNhcnJpZXMgbm8gZ3Vlc3NlZCBjb25zdGFudHMuCmBkcmFuZF9wdWJrZXlgIGFuZCBgZzJfbmVnX2dlbmVyYXRvcmAgYXJlIHVuY29tcHJlc3NlZCBCTFMxMi0zODEgRzIgcG9pbnRzCigxOTIgYnl0ZXMgZWFjaCkgaW4gU29yb2JhbiBob3N0IHNlcmlhbGl6YXRpb24uIGBkc3RgIGlzIHRoZSBSRkMgOTM4MApkb21haW4gc2VwYXJhdGlvbiB0YWcgZm9yIHRoZSBjb25maWd1cmVkIERyYW5kIHNjaGVtZS4AAAAAAAAADEdsb2JhbENvbmZpZwAAAAYAAAAAAAAADWRyYW5kX2dlbmVzaXMAAAAAAAAGAAAAAAAAAAxkcmFuZF9wZXJpb2QAAAAGAAAAAAAAAAxkcmFuZF9wdWJrZXkAAAPuAAAAwAAAAAAAAAADZHN0AAAAAA4AAAAAAAAAEGcyX25lZ19nZW5lcmF0b3IAAAPuAAAAwAAAAAAAAAAEdXNkYwAAABM=",
+        "AAAAAQAAADpBIHBhZ2Ugb2YgYmlkZGVycyBmb3IgYSByb3VuZCwgd2l0aCBjb250aW51YXRpb24gbWV0YWRhdGEuAAAAAAAAAAAAC0JpZGRlcnNQYWdlAAAAAAMAAAAZUGFnZSBvZiBiaWRkZXIgYWRkcmVzc2VzLgAAAAAAAARkYXRhAAAD6gAAABMAAAAuQ3Vyc29yIGZvciB0aGUgbmV4dCBwYWdlICgwIGlmIG5vIG1vcmUgcGFnZXMpLgAAAAAAC25leHRfY3Vyc29yAAAAAAQAAAAlVG90YWwgbnVtYmVyIG9mIGJpZGRlcnMgaW4gdGhlIHJvdW5kLgAAAAAAAAV0b3RhbAAAAAAAAAQ=" ]),
       options
     )
   }
@@ -493,6 +529,7 @@ export class Client extends ContractClient {
         get_round: this.txFromJSON<Result<Round>>,
         get_config: this.txFromJSON<Result<GlobalConfig>>,
         get_bidders: this.txFromJSON<Result<Array<string>>>,
+        get_bidders_page: this.txFromJSON<Result<BiddersPage>>,
         open_reveal: this.txFromJSON<Result<void>>,
         create_round: this.txFromJSON<Result<u64>>,
         get_bid_state: this.txFromJSON<Result<BidState>>

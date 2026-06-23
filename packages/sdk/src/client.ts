@@ -15,6 +15,7 @@ import { basicNodeSigner } from "@stellar/stellar-sdk/contract";
 import {
   Client as RoundContract,
   type BidState,
+  type BiddersPage,
   type ClearingRule,
   type GlobalConfig,
   type Round,
@@ -271,6 +272,33 @@ export class SubRosaClient {
   async getBidders(roundId: number | bigint): Promise<string[]> {
     const tx = await this.contract.get_bidders({ round_id: toBigInt(roundId) });
     return tx.result.unwrap();
+  }
+
+  /** Fetch a single page of bidders. Zero-based cursor; next_cursor = 0 means
+   *  no more pages. Limit must be 1-100. */
+  async getBiddersPage(
+    roundId: number | bigint,
+    cursor: number,
+    limit: number,
+  ): Promise<BiddersPage> {
+    const tx = await this.contract.get_bidders_page({
+      round_id: toBigInt(roundId),
+      cursor,
+      limit,
+    });
+    return tx.result.unwrap();
+  }
+
+  /** Async generator that lazily pages through all bidders for a round.
+   *  Fetches one page at a time, yielding each bidder individually. */
+  async *bidders(roundId: number | bigint): AsyncGenerator<string> {
+    let cursor = 0;
+    const PAGE_SIZE = 100;
+    do {
+      const page = await this.getBiddersPage(roundId, cursor, PAGE_SIZE);
+      for (const addr of page.data) yield addr;
+      cursor = page.next_cursor;
+    } while (cursor !== 0);
   }
 
   /** The sealed payload while it is still in Temporary storage; undefined once

@@ -34,6 +34,7 @@ pub enum Error {
     DeadlineInPast = 36,
     NoValidBids = 37,
     RoundFull = 38,
+    InvalidLimit = 39,
 }
 
 /// Round lifecycle. Mirrors the state machine in PRD §6.
@@ -120,6 +121,18 @@ pub struct Seal {
     pub ciphertext: Bytes,
     /// enc(bidder_identity, auditor_pubkey) — readable only by the auditor.
     pub auditor_blob: Bytes,
+}
+
+/// A page of bidders for a round, with continuation metadata.
+#[contracttype]
+#[derive(Clone)]
+pub struct BiddersPage {
+    /// Page of bidder addresses.
+    pub data: Vec<Address>,
+    /// Cursor for the next page (0 if no more pages).
+    pub next_cursor: u32,
+    /// Total number of bidders in the round.
+    pub total: u32,
 }
 
 #[contracttype]

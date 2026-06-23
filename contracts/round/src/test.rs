@@ -2,7 +2,7 @@
 
 use soroban_sdk::{
     testutils::{Address as _, Ledger},
-    token, Address, Bytes, BytesN, Env,
+    token, Address, Bytes, BytesN, Env, Vec,
 };
 
 use crate::drand;
@@ -489,6 +489,160 @@ fn commitment_matches_offchain_vector() {
         "3d4c2d3604b23250687f0344a9474e3c748742a4fba4616d308d529121a8dec4",
     );
     assert_eq!(h, expected);
+}
+
+// ── Paginated get_bidders_page ──────────────────────────────────────────
+
+fn round_with_n_bidders(n: u32) -> (Fixture, u64, Vec<Address>) {
+    let f = setup();
+    let operator = Address::generate(&f.env);
+    let id = open_round(&f, &operator);
+    let mut all = Vec::new(&f.env);
+    for i in 0..n {
+        let bidder = funded_bidder(&f, 1_000 + i as i128);
+        f.client.commit(
+            &id,
+            &bidder,
+            &b32(&f.env, (i + 1) as u8),
+            &Bytes::from_array(&f.env, b"c"),
+            &100,
+            &Bytes::from_array(&f.env, b"id"),
+        );
+        all.push_back(bidder);
+    }
+    (f, id, all)
+}
+
+#[test]
+fn get_bidders_page_empty() {
+    let f = setup();
+    let operator = Address::generate(&f.env);
+    let id = open_round(&f, &operator);
+    let page = f.client.get_bidders_page(&id, &0, &10);
+    assert_eq!(page.data.len(), 0);
+    assert_eq!(page.next_cursor, 0);
+    assert_eq!(page.total, 0);
+}
+
+#[test]
+fn get_bidders_page_partial() {
+    let (f, id, _all) = round_with_n_bidders(5);
+    let page = f.client.get_bidders_page(&id, &0, &3);
+    assert_eq!(page.data.len(), 3);
+    assert_eq!(page.next_cursor, 3);
+    assert_eq!(page.total, 5);
+}
+
+#[test]
+fn get_bidders_page_exact() {
+    let (f, id, _all) = round_with_n_bidders(3);
+    let page = f.client.get_bidders_page(&id, &0, &3);
+    assert_eq!(page.data.len(), 3);
+    assert_eq!(page.next_cursor, 0);
+    assert_eq!(page.total, 3);
+}
+
+#[test]
+fn get_bidders_page_final() {
+    let (f, id, _all) = round_with_n_bidders(5);
+    let page = f.client.get_bidders_page(&id, &3, &3);
+    assert_eq!(page.data.len(), 2);
+    assert_eq!(page.next_cursor, 0);
+    assert_eq!(page.total, 5);
+}
+
+#[test]
+fn get_bidders_page_multi() {
+    let (f, id, all) = round_with_n_bidders(10);
+    // First page
+    let p1 = f.client.get_bidders_page(&id, &0, &4);
+    assert_eq!(p1.data.len(), 4);
+    assert_eq!(p1.next_cursor, 4);
+    assert_eq!(p1.total, 10);
+    assert_eq!(p1.data.get(0).unwrap(), all.get(0).unwrap());
+    assert_eq!(p1.data.get(3).unwrap(), all.get(3).unwrap());
+    // Second page
+    let p2 = f.client.get_bidders_page(&id, &p1.next_cursor, &4);
+    assert_eq!(p2.data.len(), 4);
+    assert_eq!(p2.next_cursor, 8);
+    assert_eq!(p2.total, 10);
+    assert_eq!(p2.data.get(0).unwrap(), all.get(4).unwrap());
+    assert_eq!(p2.data.get(3).unwrap(), all.get(7).unwrap());
+    // Third (final) page
+    let p3 = f.client.get_bidders_page(&id, &p2.next_cursor, &4);
+    assert_eq!(p3.data.len(), 2);
+    assert_eq!(p3.next_cursor, 0);
+    assert_eq!(p3.total, 10);
+    assert_eq!(p3.data.get(0).unwrap(), all.get(8).unwrap());
+    assert_eq!(p3.data.get(1).unwrap(), all.get(9).unwrap());
+}
+
+#[test]
+fn get_bidders_page_rejects_limit_zero() {
+    let f = setup();
+    let operator = Address::generate(&f.env);
+    let id = open_round(&f, &operator);
+    let res = f.client.try_get_bidders_page(&id, &0, &0);
+    assert!(res.is_err());
+}
+
+#[test]
+fn get_bidders_page_rejects_limit_over_max() {
+    let f = setup();
+    let operator = Address::generate(&f.env);
+    let id = open_round(&f, &operator);
+    let res = f.client.try_get_bidders_page(&id, &0, &101);
+    assert!(res.is_err());
+}
+
+#[test]
+fn get_bidders_page_cursor_at_total() {
+    let (f, id, _all) = round_with_n_bidders(3);
+    let page = f.client.get_bidders_page(&id, &3, &5);
+    assert_eq!(page.data.len(), 0);
+    assert_eq!(page.next_cursor, 0);
+    assert_eq!(page.total, 3);
+}
+
+#[test]
+fn get_bidders_page_cursor_beyond_total() {
+    let (f, id, _all) = round_with_n_bidders(3);
+    let page = f.client.get_bidders_page(&id, &10, &5);
+    assert_eq!(page.data.len(), 0);
+    assert_eq!(page.next_cursor, 0);
+    assert_eq!(page.total, 3);
+}
+
+#[test]
+fn get_bidders_page_preserves_order() {
+    let (f, id, all) = round_with_n_bidders(5);
+    // Full retrieval via pages must preserve insertion order
+    let mut collected = Vec::new(&f.env);
+    let mut cursor: u32 = 0;
+    loop {
+        let page = f.client.get_bidders_page(&id, &cursor, &2);
+        for i in 0..page.data.len() {
+            collected.push_back(page.data.get(i).unwrap());
+        }
+        if page.next_cursor == 0 {
+            break;
+        }
+        cursor = page.next_cursor;
+    }
+    assert_eq!(collected.len(), 5);
+    for i in 0..5 {
+        assert_eq!(collected.get(i).unwrap(), all.get(i).unwrap());
+    }
+}
+
+#[test]
+fn get_bidders_still_returns_full_list() {
+    let (f, id, all) = round_with_n_bidders(5);
+    let full = f.client.get_bidders(&id);
+    assert_eq!(full.len(), 5);
+    for i in 0..5 {
+        assert_eq!(full.get(i).unwrap(), all.get(i).unwrap());
+    }
 }
 
 #[test]

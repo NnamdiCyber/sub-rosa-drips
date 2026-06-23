@@ -23,6 +23,7 @@ export {
   Errors as RoundErrors,
   type Round,
   type BidState,
+  type BiddersPage,
   type Seal,
   type GlobalConfig,
   type ClearingRule,
