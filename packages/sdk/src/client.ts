@@ -5,8 +5,7 @@
 // contract Spec embedded in the generated bindings, so the bytes on the wire are
 // exactly what the contract expects.
 
-import { Keypair } from "@stellar/stellar-sdk";
-import { rpc } from "@stellar/stellar-sdk";
+import { Keypair, rpc } from "@stellar/stellar-sdk";
 import type {
   AssembledTransaction,
   Result,
@@ -22,6 +21,13 @@ import {
 } from "@sub-rosa/round-bindings";
 import type { SealedBid } from "@sub-rosa/tlock";
 import type { TransactionSubmitter } from "./submitter.js";
+import {
+  SubRosaClientConfigError,
+  SubRosaMissingReturnValueError,
+  SubRosaSubmitError,
+  SubRosaTimeoutError,
+  SubRosaTransactionError,
+} from "./errors.js";
 
 export interface SubRosaClientConfig {
   /** Soroban RPC endpoint, e.g. https://soroban-testnet.stellar.org */
@@ -45,6 +51,20 @@ export interface SubRosaClientConfig {
   allowHttp?: boolean;
   /** Optional external submitter. Direct Soroban RPC remains the default. */
   submitter?: TransactionSubmitter;
+  /**
+   * How long (ms) to poll RPC for transaction finality when using an external
+   * submitter. Must be at least 1_000. Default: 60_000.
+   */
+  confirmTimeout?: number;
+  /**
+   * How long (ms) to wait between polling RPC for transaction status when
+   * using an external submitter. Must be at least 100. Default: 1_500.
+   */
+  pollInterval?: number;
+  /**
+   * @internal Testing hook: override the poll-loop sleep function.
+   */
+  _sleep?: (ms: number) => Promise<void>;
 }
 
 export type ClearingRuleTag = ClearingRule["tag"];
@@ -99,6 +119,8 @@ export class SubRosaClient {
   readonly #rpcUrl: string;
   readonly #allowHttp: boolean;
   readonly #submitter?: TransactionSubmitter;
+  readonly #confirmTimeout: number;
+  readonly #pollInterval: number;
 
   constructor(config: SubRosaClientConfig) {
     const keypair = config.secretKey
@@ -115,6 +137,19 @@ export class SubRosaClient {
     this.#rpcUrl = config.rpcUrl;
     this.#allowHttp = config.allowHttp ?? false;
     this.#submitter = config.submitter;
+    this.#confirmTimeout = config.confirmTimeout ?? 60_000;
+    this.#pollInterval = config.pollInterval ?? 1_500;
+    if (this.#confirmTimeout < 1_000) {
+      throw new SubRosaClientConfigError(
+        `confirmTimeout must be at least 1000ms, got ${this.#confirmTimeout}`,
+      );
+    }
+    if (this.#pollInterval < 100) {
+      throw new SubRosaClientConfigError(
+        `pollInterval must be at least 100ms, got ${this.#pollInterval}`,
+      );
+    }
+    if (config._sleep) this.#sleep = config._sleep;
     this.contract = new RoundContract({
       contractId: config.contractId,
       networkPassphrase: config.networkPassphrase,
@@ -133,7 +168,7 @@ export class SubRosaClient {
 
   #requireSource(role: string): string {
     if (!this.#source) {
-      throw new Error(
+      throw new SubRosaClientConfigError(
         `a secretKey (or publicKey) is required to use it as the ${role}`,
       );
     }
@@ -142,39 +177,66 @@ export class SubRosaClient {
 
   async #sendUnwrap<T>(tx: AssembledTransaction<Result<T>>): Promise<T> {
     if (!this.#submitter) {
-      const sent = await tx.signAndSend();
-      return sent.result.unwrap();
+      try {
+        const sent = await tx.signAndSend();
+        return sent.result.unwrap();
+      } catch (e) {
+        throw new SubRosaSubmitError("direct RPC submission failed", { cause: e });
+      }
     }
 
     await tx.sign();
-    if (!tx.signed) throw new Error("transaction was not signed");
-    const submitted = await this.#submitter.submitSignedTransaction({
-      signedTransactionXdr: tx.signed.toXDR(),
-      contractId: this.contractId,
-      networkPassphrase: this.networkPassphrase,
-      rpcUrl: this.#rpcUrl,
-    });
+    if (!tx.signed) throw new SubRosaSubmitError("transaction was not signed");
+    let submitted;
+    try {
+      submitted = await this.#submitter.submitSignedTransaction({
+        signedTransactionXdr: tx.signed.toXDR(),
+        contractId: this.contractId,
+        networkPassphrase: this.networkPassphrase,
+        rpcUrl: this.#rpcUrl,
+      });
+    } catch (e) {
+      throw new SubRosaSubmitError(
+        `${this.#submitter.name} failed to submit transaction`,
+        { cause: e },
+      );
+    }
     const server = new rpc.Server(this.#rpcUrl, { allowHttp: this.#allowHttp });
-    const deadline = Date.now() + 60_000;
+    const deadline = Date.now() + this.#confirmTimeout;
     let lastStatus = "NOT_FOUND";
     while (Date.now() < deadline) {
-      const res = await server.getTransaction(submitted.hash);
+      let res;
+      try {
+        res = await server.getTransaction(submitted.hash);
+      } catch (e) {
+        throw new SubRosaSubmitError(
+          `RPC getTransaction failed for ${submitted.hash}`,
+          { cause: e },
+        );
+      }
       lastStatus = res.status;
       if (res.status === rpc.Api.GetTransactionStatus.SUCCESS) {
         if (!("returnValue" in res) || !res.returnValue) {
-          throw new Error(`transaction ${submitted.hash} succeeded without a return value`);
+          throw new SubRosaMissingReturnValueError(submitted.hash);
         }
         return tx.options.parseResultXdr(res.returnValue).unwrap();
       }
       if (res.status !== rpc.Api.GetTransactionStatus.NOT_FOUND) {
-        throw new Error(`transaction ${submitted.hash} ended with status ${res.status}`);
+        throw new SubRosaTransactionError(submitted.hash, res.status);
       }
-      await new Promise((resolve) => setTimeout(resolve, 1_500));
+      await this.#sleep(this.#pollInterval);
     }
-    throw new Error(
-      `${this.#submitter.name} submitted ${submitted.hash}, but RPC did not finalize it in time (last=${lastStatus})`,
-    );
+    throw new SubRosaTimeoutError({
+      hash: submitted.hash,
+      submitter: this.#submitter.name,
+      lastStatus,
+      timeoutMs: this.#confirmTimeout,
+      pollIntervalMs: this.#pollInterval,
+    });
   }
+
+  #sleep: (ms: number) => Promise<void> = (ms) =>
+    new Promise((resolve) => setTimeout(resolve, ms));
 
   // ── State-changing calls (sign + submit over RPC) ──────────────────────
 

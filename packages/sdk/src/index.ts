@@ -14,6 +14,14 @@ export {
   type SubmitSignedTransactionParams,
   type TransactionSubmitter,
 } from "./submitter.js";
+export {
+  SubRosaClientConfigError,
+  SubRosaMissingReturnValueError,
+  SubRosaSubmitError,
+  SubRosaTimeoutError,
+  SubRosaTransactionError,
+} from "./errors.js";
+export type { TimeoutErrorParams } from "./errors.js";
 export { MAINNET_ARTIFACTS, MAINNET_MICRO_MAX_ESCROW } from "./mainnet-artifacts.js";
 
 // Re-export the generated contract types so consumers get spec-accurate shapes
