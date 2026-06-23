@@ -51,14 +51,13 @@ test("tampered commitment: tampered commitment hash fails binding check", () => 
   assert.ok(cmtIssues[0].path?.includes("GA4GN"));
 });
 
-test("tampered network: different network passphrase still passes (no onchain check)", () => {
-  // The verifier is offline and doesn't check network against RPC.
-  // Network is metadata only — the verifier trusts the receipt content.
-  // This demonstrates the honest-marking requirement: the verifier checks
-  // internal consistency, not external source-of-truth.
+test("tampered network: wrong network passphrase fails via fingerprint mismatch", () => {
+  // The fixture has a mainnet passphrase but a testnet networkFingerprint —
+  // the verifier detects this without any caller-supplied context.
   const receipt = loadFixture("tampered-network.json");
   const result = verifyReceipt(receipt);
-  assert.equal(result.valid, true);
+  assert.equal(result.valid, false);
+  assert.ok(result.issues.some((i) => i.code === "network_mismatch"));
 });
 
 test("invalid clearing rule fails", () => {
@@ -83,4 +82,34 @@ test("unsupported version fails", () => {
   const result = verifyReceipt(receipt);
   assert.equal(result.valid, false);
   assert.ok(result.issues.some((i) => i.code === "unsupported_version"));
+});
+
+test("tampered order: reordered bidders with tied values changes computed winner", () => {
+  // Two bidders both revealed 300 (tied). For HighestBid with equal values,
+  // the first in the bidders array wins. The fixture tampered the order so
+  // that GB5HN appears before GA4GN, but the declared winner is still GA4GN
+  // (the original first). This causes winner_mismatch.
+  const receipt = loadFixture("tampered-order.json");
+  const result = verifyReceipt(receipt);
+  assert.equal(result.valid, false);
+  const orderIssues = result.issues.filter((i) => i.code === "winner_mismatch");
+  assert.equal(orderIssues.length, 1);
+  assert.match(orderIssues[0].message, /computed winner is/);
+});
+
+test("testnet proof fixture passes verification", () => {
+  const receipt = loadFixture("testnet-proof.json");
+  const result = verifyReceipt(receipt);
+  assert.equal(result.valid, true);
+  assert.equal(result.computedWinner.address, receipt.winner);
+  assert.equal(result.computedWinner.value?.toString(), receipt.winningValue);
+});
+
+test("tampered evidence: invalid hex in ciphertext fails", () => {
+  const receipt = loadFixture("tampered-evidence.json");
+  const result = verifyReceipt(receipt);
+  assert.equal(result.valid, false);
+  const evidenceIssues = result.issues.filter((i) => i.code === "invalid_evidence_hex");
+  assert.equal(evidenceIssues.length, 1);
+  assert.ok(evidenceIssues[0].path?.includes("GA4GN"));
 });

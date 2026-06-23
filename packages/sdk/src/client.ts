@@ -23,6 +23,7 @@ import {
 import { toHex } from "@sub-rosa/tlock";
 import type { SealedBid } from "@sub-rosa/tlock";
 import type { RoundReceipt } from "./receipt.js";
+import { networkFingerprint } from "./receipt.js";
 import type { TransactionSubmitter } from "./submitter.js";
 import {
   SubRosaClientConfigError,
@@ -403,12 +404,13 @@ export class SubRosaClient {
         this.getSeal(rid, bidder),
       ]);
       const commitment = toHex(state.commitment);
+      const nonceVal = state.revealed_nonce ? toHex(state.revealed_nonce) : null;
       bids[bidder] = {
         commitment,
         escrow: state.escrow.toString(),
         revealedValue: state.revealed_value?.toString() ?? null,
-        nonce: null,
-        hashValid: null,
+        nonce: nonceVal,
+        hashValid: nonceVal !== null ? true : null,
         valid: state.valid,
         settled: state.settled,
         evidence: {
@@ -421,6 +423,7 @@ export class SubRosaClient {
     return {
       version: 1,
       network: this.networkPassphrase,
+      networkFingerprint: networkFingerprint(this.networkPassphrase),
       contractId: this.contractId,
       exportedAt: new Date().toISOString(),
       roundId: rid.toString(),

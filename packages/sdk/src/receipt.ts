@@ -4,7 +4,16 @@
 // lowercase hex. Fields that depend on expired Temporary storage (seal
 // ciphertext, auditor blob) are honestly marked null when unavailable.
 
+import { createHash } from "node:crypto";
+
 export const RECEIPT_VERSION = 1;
+
+/** sha256(utf8(networkPassphrase)) — hex. Embedded in the receipt so the
+ *  offline verifier can detect a tampered `network` field without any caller-
+ *  supplied context. */
+export function networkFingerprint(passphrase: string): string {
+  return createHash("sha256").update(passphrase, "utf8").digest("hex");
+}
 
 export interface BidReceiptEntry {
   /** sha256(be16(value) ‖ nonce) — hex. */
@@ -35,6 +44,9 @@ export interface RoundReceipt {
   version: typeof RECEIPT_VERSION;
   /** Stellar network passphrase (e.g. "Test SDF Network ; September 2015"). */
   network: string;
+  /** sha256(utf8(network)) — hex. Lets the offline verifier detect a tampered
+   *  `network` field without any caller-supplied context. */
+  networkFingerprint: string;
   /** Contract ID the round belongs to (C…). */
   contractId: string;
   /** ISO-8601 timestamp when this receipt was exported. */

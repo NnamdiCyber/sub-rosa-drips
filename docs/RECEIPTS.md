@@ -8,6 +8,7 @@ A **round receipt** is a portable JSON document that captures the final state of
 | --- | --- | --- |
 | `version` | `number` | Receipt schema version (currently `1`) |
 | `network` | `string` | Stellar network passphrase (e.g. `"Test SDF Network ; September 2015"`) |
+| `networkFingerprint` | `string` (64 hex chars) | `sha256(utf8(network))` — lets the offline verifier detect a tampered `network` field without any caller context |
 | `contractId` | `string` | Contract address (starts with `C`) |
 | `exportedAt` | `string (ISO 8601)` | When the receipt was exported |
 | `roundId` | `string` (decimal bigint) | Round number |
@@ -50,6 +51,7 @@ The `verifyReceipt` function in `@sub-rosa/sdk` performs **stateless, offline** 
 | Check | What it detects | Error code |
 | --- | --- | --- |
 | Schema version | Unsupported receipt format | `unsupported_version` |
+| Network fingerprint | `networkFingerprint` does not match `sha256(utf8(network))` — detects a tampered passphrase without caller context | `network_mismatch` |
 | Network metadata | Missing or malformed fields | `missing_network`, `invalid_contract_id`, etc. |
 | Clearing rule | Invalid or missing rule | `invalid_clearing_rule` |
 | Bidder list consistency | Duplicates, missing bid entries, orphan entries | `duplicate_bidder`, `missing_bid_entry`, `orphan_bid_entry` |
@@ -80,7 +82,7 @@ The receipt's trust depends on the **exporter** being honest about the on-chain 
 
 ```bash
 # Requires: RPC_URL, NETWORK_PASSPHRASE, CONTRACT_ID in environment
-pnpm --filter @sub-rosa/receipt-cli receipt export 1 > round-1-receipt.json
+pnpm --filter @sub-rosa/receipt-cli receipt export 1
 ```
 
 ### Verify offline
@@ -108,10 +110,13 @@ Test fixtures live in `services/receipt-cli/src/fixtures/`:
 | Fixture | Expectation |
 | --- | --- |
 | `golden.json` | 3 bidders, HighestBid, bidder 2 wins with 250 — passes all checks |
+| `testnet-proof.json` | 2 bidders, round 42 — passes all checks (represents a real testnet export) |
 | `tampered-winner.json` | Declared winner differs from computed winner — `winner_mismatch` |
 | `tampered-values.json` | Revealed values swapped so commitments don't bind — `commitment_mismatch` |
 | `tampered-commitment.json` | One commitment hash replaced with garbage — `commitment_mismatch` |
-| `tampered-network.json` | Different network passphrase — still passes (metadata only, not checked offline) |
+| `tampered-network.json` | Passphrase changed to mainnet but `networkFingerprint` kept as testnet — always fails with `network_mismatch` |
+| `tampered-order.json` | Tied bids, bidders reordered so winner changes — `winner_mismatch` |
+| `tampered-evidence.json` | Invalid hex in evidence ciphertext — `invalid_evidence_hex` |
 
 Run fixture tests:
 

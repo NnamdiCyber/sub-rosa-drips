@@ -6,6 +6,7 @@
 
 import { toHex, fromHex, commitment } from "@sub-rosa/tlock";
 import type { RoundReceipt } from "./receipt.js";
+import { networkFingerprint } from "./receipt.js";
 
 // ── Verification result types ────────────────────────────────────────────
 
@@ -27,6 +28,10 @@ export interface VerificationResult {
   computedWinner: { address: string | null; value: bigint | null };
 }
 
+export interface VerifyOptions {
+  // Reserved for future extension.
+}
+
 // ── Helpers ──────────────────────────────────────────────────────────────
 
 const VALID_STATUSES = new Set([
@@ -44,7 +49,7 @@ function parseBigInt(s: string): bigint | null {
 
 // ── Verifier ─────────────────────────────────────────────────────────────
 
-export function verifyReceipt(receipt: RoundReceipt): VerificationResult {
+export function verifyReceipt(receipt: RoundReceipt, options?: VerifyOptions): VerificationResult {
   const issues: VerificationIssue[] = [];
   const add = (
     severity: Severity,
@@ -61,6 +66,21 @@ export function verifyReceipt(receipt: RoundReceipt): VerificationResult {
 
   if (typeof receipt.network !== "string" || !receipt.network) {
     add("error", "missing_network", "network is missing or empty", "network");
+  } else {
+    // Always verify the embedded fingerprint — detects a tampered network
+    // passphrase without any caller-supplied context.
+    const expected = networkFingerprint(receipt.network);
+    if (
+      typeof receipt.networkFingerprint !== "string" ||
+      receipt.networkFingerprint !== expected
+    ) {
+      add(
+        "error",
+        "network_mismatch",
+        `networkFingerprint does not match sha256 of network passphrase`,
+        "networkFingerprint",
+      );
+    }
   }
   if (typeof receipt.contractId !== "string" || !receipt.contractId.startsWith("C")) {
     add("error", "invalid_contract_id", "contractId must start with C", "contractId");
@@ -208,10 +228,10 @@ export function verifyReceipt(receipt: RoundReceipt): VerificationResult {
     const evidence = entry.evidence;
     if (evidence) {
       if (evidence.ciphertext !== null && !/^[0-9a-f]+$/i.test(evidence.ciphertext)) {
-        add("warning", "invalid_evidence_hex", `ciphertext is not valid hex`, `bids.${bidder}.evidence.ciphertext`);
+        add("error", "invalid_evidence_hex", `ciphertext is not valid hex`, `bids.${bidder}.evidence.ciphertext`);
       }
       if (evidence.auditorBlob !== null && !/^[0-9a-f]+$/i.test(evidence.auditorBlob)) {
-        add("warning", "invalid_evidence_hex", `auditorBlob is not valid hex`, `bids.${bidder}.evidence.auditorBlob`);
+        add("error", "invalid_evidence_hex", `auditorBlob is not valid hex`, `bids.${bidder}.evidence.auditorBlob`);
       }
     }
   }

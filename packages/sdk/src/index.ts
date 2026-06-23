@@ -27,6 +27,7 @@ export { MAINNET_ARTIFACTS, MAINNET_MICRO_MAX_ESCROW } from "./mainnet-artifacts
 export {
   serializeReceipt,
   parseReceipt,
+  networkFingerprint,
   type RoundReceipt,
   type BidReceiptEntry,
   RECEIPT_VERSION,
@@ -35,6 +36,7 @@ export {
   verifyReceipt,
   type VerificationIssue,
   type VerificationResult,
+  type VerifyOptions,
   type Severity,
 } from "./verify.js";
 

@@ -1,6 +1,7 @@
 {
   "version": 1,
   "network": "Test SDF Network ; September 2015",
+  "networkFingerprint": "cee0302d59844d32bdca915c8203dd44b33fbb7edc19051ea37abedf28ecd472",
   "contractId": "CA3D5K7FJ3YZM2SJ6XJ6Y5Q5XJ6Z2M3SJ6XJ6Y5Q5XJ6Z2M3SJ6XJ6Y5",
   "exportedAt": "2026-06-23T12:00:00.000Z",
   "roundId": "1",

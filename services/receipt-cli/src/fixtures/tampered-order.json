@@ -4,7 +4,7 @@
   "networkFingerprint": "cee0302d59844d32bdca915c8203dd44b33fbb7edc19051ea37abedf28ecd472",
   "contractId": "CA3D5K7FJ3YZM2SJ6XJ6Y5Q5XJ6Z2M3SJ6XJ6Y5Q5XJ6Z2M3SJ6XJ6Y5",
   "exportedAt": "2026-06-23T12:00:00.000Z",
-  "roundId": "1",
+  "roundId": "2",
   "itemRef": "ab84f41446646ddbea23656fda8f2e0c282deb2da09603618a71f9d2ff1d1d6d",
   "revealRound": 5000000,
   "clearingRule": "HighestBid",
@@ -13,16 +13,16 @@
   "operator": "GBCDABQZOSZG4Y5X3X5X3X5X3X5X3X5X3X5X3X5X3X5X3X5X3X5X3X5X3",
   "auditorPubkey": "deadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
   "bidders": [
-    "GA4GN2X7YQKQJF5Y5X3X5X3X5X3X5X3X5X3X5X3X5X3X5X3X5X3X5X3X5X3",
     "GB5HN3Y8ZRLRK6Z6Y4X4Y4X4Y4X4Y4X4Y4X4Y4X4Y4X4Y4X4Y4X4Y4X4Y4",
+    "GA4GN2X7YQKQJF5Y5X3X5X3X5X3X5X3X5X3X5X3X5X3X5X3X5X3X5X3X5X3",
     "GC6IO4Z9ASMSL7A7Y5X5X5X5X5X5X5X5X5X5X5X5X5X5X5X5X5X5X5X5X5"
   ],
   "bids": {
     "GA4GN2X7YQKQJF5Y5X3X5X3X5X3X5X3X5X3X5X3X5X3X5X3X5X3X5X3X5X3": {
-      "commitment": "d77d1adf5eca2aa1b1d26b310fe4da2af3900fb080bcb701cae8cae879be1e7a",
-      "escrow": "200",
-      "revealedValue": "250",
-      "nonce": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "commitment": "ebed1ec6e63a3092c6f2c94df66a4cc88164a204ebb8ea6a193d010b85dac953",
+      "escrow": "500",
+      "revealedValue": "300",
+      "nonce": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
       "hashValid": true,
       "valid": true,
       "settled": true,
@@ -32,10 +32,10 @@
       }
     },
     "GB5HN3Y8ZRLRK6Z6Y4X4Y4X4Y4X4Y4X4Y4X4Y4X4Y4X4Y4X4Y4X4Y4X4Y4": {
-      "commitment": "c5ee5d77eaee11aac66da233c475bd9e14dc5dc89a639c84cfd8ca47d1837cb0",
+      "commitment": "72f1390a226beed8602485115b61a7ccb843237f09d07b8baef9642d23189929",
       "escrow": "500",
-      "revealedValue": "100",
-      "nonce": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "revealedValue": "300",
+      "nonce": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
       "hashValid": true,
       "valid": true,
       "settled": false,
@@ -45,10 +45,10 @@
       }
     },
     "GC6IO4Z9ASMSL7A7Y5X5X5X5X5X5X5X5X5X5X5X5X5X5X5X5X5X5X5X5X5": {
-      "commitment": "ab84f41446646ddbea23656fda8f2e0c282deb2da09603618a71f9d2ff1d1d6d",
-      "escrow": "150",
-      "revealedValue": "75",
-      "nonce": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+      "commitment": "31255d42775517c61a54a8924ce6e0db4476255186d76c05ba0b623d42d2c1dc",
+      "escrow": "200",
+      "revealedValue": "50",
+      "nonce": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
       "hashValid": true,
       "valid": true,
       "settled": true,
@@ -59,6 +59,6 @@
     }
   },
   "winner": "GA4GN2X7YQKQJF5Y5X3X5X3X5X3X5X3X5X3X5X3X5X3X5X3X5X3X5X3X5X3",
-  "winningValue": "250",
+  "winningValue": "300",
   "status": "Settled"
 }
