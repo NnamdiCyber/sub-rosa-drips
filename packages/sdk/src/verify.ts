@@ -146,7 +146,7 @@ export function verifyReceipt(receipt: RoundReceipt, options?: VerifyOptions): V
     }
 
     if (entry.revealedValue !== null && entry.nonce !== null) {
-      // Commitment binding check.
+      // Full offline binding check — both value and nonce are present.
       const rv = parseBigInt(entry.revealedValue);
       if (rv === null) {
         add("error", "invalid_revealed_value", `revealedValue must be a decimal bigint string`, `${prefix}.revealedValue`);
@@ -173,23 +173,38 @@ export function verifyReceipt(receipt: RoundReceipt, options?: VerifyOptions): V
           );
         }
 
-        // Track winner candidate (only valid bids that were revealed).
-        if (entry.valid && rv !== null) {
+        // Track winner candidate.
+        if (entry.valid) {
           const rule = receipt.clearingRule;
           const isHigher = computedWinnerVal === null || rv > computedWinnerVal;
           const isLower = computedWinnerVal === null || rv < computedWinnerVal;
-          const isWinner = rule === "HighestBid" ? isHigher : isLower;
-          if (isWinner) {
+          if (rule === "HighestBid" ? isHigher : isLower) {
             computedWinnerAddr = bidder;
             computedWinnerVal = rv;
           }
         }
       }
-    } else if (entry.revealedValue !== null || entry.nonce !== null) {
+    } else if (entry.revealedValue !== null && entry.nonce === null) {
+      // Contract verified the hash on-chain; nonce not persisted. Offline
+      // commitment re-binding is not possible. Winner is still computable.
+      const rv = parseBigInt(entry.revealedValue);
+      if (rv === null) {
+        add("error", "invalid_revealed_value", `revealedValue must be a decimal bigint string`, `${prefix}.revealedValue`);
+      } else if (entry.valid) {
+        const rule = receipt.clearingRule;
+        const isHigher = computedWinnerVal === null || rv > computedWinnerVal;
+        const isLower = computedWinnerVal === null || rv < computedWinnerVal;
+        if (rule === "HighestBid" ? isHigher : isLower) {
+          computedWinnerAddr = bidder;
+          computedWinnerVal = rv;
+        }
+      }
+    } else if (entry.nonce !== null) {
+      // nonce present without revealedValue — malformed.
       add(
         "error",
         "partial_reveal",
-        "revealedValue and nonce must both be set or both be null",
+        "nonce is set but revealedValue is null",
         `${prefix}`,
       );
     }

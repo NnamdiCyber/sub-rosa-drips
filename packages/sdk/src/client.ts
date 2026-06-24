@@ -404,13 +404,15 @@ export class SubRosaClient {
         this.getSeal(rid, bidder),
       ]);
       const commitment = toHex(state.commitment);
-      const nonceVal = state.revealed_nonce ? toHex(state.revealed_nonce) : null;
+      // The contract verifies sha256(be16(value)‖nonce) on-chain at reveal time
+      // but does not persist the nonce. Offline commitment re-binding is not
+      // possible from an on-chain export; nonce and hashValid are left null.
       bids[bidder] = {
         commitment,
         escrow: state.escrow.toString(),
         revealedValue: state.revealed_value?.toString() ?? null,
-        nonce: nonceVal,
-        hashValid: nonceVal !== null ? true : null,
+        nonce: null,
+        hashValid: null,
         valid: state.valid,
         settled: state.settled,
         evidence: {

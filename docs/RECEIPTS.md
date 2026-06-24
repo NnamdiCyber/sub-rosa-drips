@@ -32,8 +32,8 @@ A **round receipt** is a portable JSON document that captures the final state of
 | `commitment` | `string` (64 hex chars) | `sha256(be16(value) || nonce)` |
 | `escrow` | `string` (decimal) | Escrow amount |
 | `revealedValue` | `string` (decimal) or `null` | Bid value (null if not-revealed) |
-| `nonce` | `string` (64 hex chars) or `null` | The per-bid 32-byte nonce (null if not-revealed) |
-| `hashValid` | `boolean` | Whether `revealedValue` and `nonce` match `commitment` (contract-verified) |
+| `nonce` | `string` (64 hex chars) or `null` | The per-bid 32-byte nonce. **null in on-chain exports** — the contract verifies the hash but does not persist the nonce. Present only in manually constructed receipts (e.g. test fixtures). |
+| `hashValid` | `boolean` or `null` | Whether `revealedValue` and `nonce` match `commitment`. `null` when `nonce` is not available (on-chain export); `true`/`false` when both are present (offline re-verification). |
 | `valid` | `boolean` | Whether the bid passed all on-chain validity checks (value ≤ escrow etc.) |
 | `settled` | `boolean` | Whether escrow was settled (transferred or refunded) |
 | `evidence` | `object` or `null` | Contains `ciphertext` (hex, may be null after expiry) and `auditorBlob` (hex, may be null after expiry) |
@@ -55,7 +55,7 @@ The `verifyReceipt` function in `@sub-rosa/sdk` performs **stateless, offline** 
 | Network metadata | Missing or malformed fields | `missing_network`, `invalid_contract_id`, etc. |
 | Clearing rule | Invalid or missing rule | `invalid_clearing_rule` |
 | Bidder list consistency | Duplicates, missing bid entries, orphan entries | `duplicate_bidder`, `missing_bid_entry`, `orphan_bid_entry` |
-| Commitment binding | For each revealed bid, recomputes `sha256(be16(value) || nonce)` and compares to stored commitment | `commitment_mismatch` |
+| Commitment binding | For each revealed bid **where `nonce` is present**, recomputes `sha256(be16(value) || nonce)` and compares to stored commitment. Skipped when `nonce` is null (on-chain export; contract already verified on-chain). | `commitment_mismatch` |
 | Winner selection | Recomputes the winner from valid revealed bids and compares to declared winner | `winner_mismatch` |
 | Evidence hex format | Ciphertext/auditorBlob not valid hex | `invalid_evidence_hex` (warning) |
 
