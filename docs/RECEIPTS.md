@@ -32,8 +32,8 @@ A **round receipt** is a portable JSON document that captures the final state of
 | `commitment` | `string` (64 hex chars) | `sha256(be16(value) || nonce)` |
 | `escrow` | `string` (decimal) | Escrow amount |
 | `revealedValue` | `string` (decimal) or `null` | Bid value (null if not-revealed) |
-| `nonce` | `string` (64 hex chars) or `null` | The per-bid 32-byte nonce. **null in on-chain exports** — the contract verifies the hash but does not persist the nonce. Present only in manually constructed receipts (e.g. test fixtures). |
-| `hashValid` | `boolean` or `null` | Whether `revealedValue` and `nonce` match `commitment`. `null` when `nonce` is not available (on-chain export); `true`/`false` when both are present (offline re-verification). |
+| `nonce` | `string` (64 hex chars) or `null` | The per-bid 32-byte nonce. Persisted on-chain at reveal time; present in live exports for revealed bids. `null` only for unrevealed bids. |
+| `hashValid` | `boolean` or `null` | Whether `revealedValue` and `nonce` match `commitment`. `null` when `nonce` is not available (unrevealed); `true`/`false` when both are present. |
 | `valid` | `boolean` | Whether the bid passed all on-chain validity checks (value ≤ escrow etc.) |
 | `settled` | `boolean` | Whether escrow was settled (transferred or refunded) |
 | `evidence` | `object` or `null` | Contains `ciphertext` (hex, may be null after expiry) and `auditorBlob` (hex, may be null after expiry) |

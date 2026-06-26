@@ -183,6 +183,7 @@ impl SubRosaRound {
             commitment,
             escrow,
             revealed_value: None,
+            revealed_nonce: None,
             valid: false,
             settled: false,
         };
@@ -275,6 +276,7 @@ impl SubRosaRound {
         // clearing if the bidder committed to a non-positive value or one above
         // their escrow (a self-inflicted invalid bid; escrow refunded at settle).
         state.revealed_value = Some(value);
+        state.revealed_nonce = Some(nonce.clone());
         state.valid = value > 0 && value <= state.escrow;
         set_state(&env, round_id, &bidder, &state);
 
