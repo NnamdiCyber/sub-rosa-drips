@@ -2248,12 +2248,6 @@
                     },
                     {
                       "key": {
-                        "symbol": "revealed_nonce"
-                      },
-                      "val": "void"
-                    },
-                    {
-                      "key": {
                         "symbol": "revealed_value"
                       },
                       "val": "void"
@@ -2344,12 +2338,6 @@
                           "lo": 100
                         }
                       }
-                    },
-                    {
-                      "key": {
-                        "symbol": "revealed_nonce"
-                      },
-                      "val": "void"
                     },
                     {
                       "key": {
@@ -2446,12 +2434,6 @@
                     },
                     {
                       "key": {
-                        "symbol": "revealed_nonce"
-                      },
-                      "val": "void"
-                    },
-                    {
-                      "key": {
                         "symbol": "revealed_value"
                       },
                       "val": "void"
@@ -2542,12 +2524,6 @@
                           "lo": 100
                         }
                       }
-                    },
-                    {
-                      "key": {
-                        "symbol": "revealed_nonce"
-                      },
-                      "val": "void"
                     },
                     {
                       "key": {
@@ -2644,12 +2620,6 @@
                     },
                     {
                       "key": {
-                        "symbol": "revealed_nonce"
-                      },
-                      "val": "void"
-                    },
-                    {
-                      "key": {
                         "symbol": "revealed_value"
                       },
                       "val": "void"
@@ -2740,12 +2710,6 @@
                           "lo": 100
                         }
                       }
-                    },
-                    {
-                      "key": {
-                        "symbol": "revealed_nonce"
-                      },
-                      "val": "void"
                     },
                     {
                       "key": {
@@ -2842,12 +2806,6 @@
                     },
                     {
                       "key": {
-                        "symbol": "revealed_nonce"
-                      },
-                      "val": "void"
-                    },
-                    {
-                      "key": {
                         "symbol": "revealed_value"
                       },
                       "val": "void"
@@ -2938,12 +2896,6 @@
                           "lo": 100
                         }
                       }
-                    },
-                    {
-                      "key": {
-                        "symbol": "revealed_nonce"
-                      },
-                      "val": "void"
                     },
                     {
                       "key": {
@@ -3040,12 +2992,6 @@
                     },
                     {
                       "key": {
-                        "symbol": "revealed_nonce"
-                      },
-                      "val": "void"
-                    },
-                    {
-                      "key": {
                         "symbol": "revealed_value"
                       },
                       "val": "void"
@@ -3136,12 +3082,6 @@
                           "lo": 100
                         }
                       }
-                    },
-                    {
-                      "key": {
-                        "symbol": "revealed_nonce"
-                      },
-                      "val": "void"
                     },
                     {
                       "key": {
